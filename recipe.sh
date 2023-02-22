@@ -6,6 +6,8 @@
 #lastchangeauthor       Rui Ribeiro - rui.ribeiro@cafe.rnp.br
 #date                   2023/02/21
 #version                0.0.2
+#
+#changelog              1.0.0 - 2023/02/XX - Initial version for Ubuntu 22.04 and Shibboleth IDP 4.3.0.
 
 RET=""
 DEBUG="1"
