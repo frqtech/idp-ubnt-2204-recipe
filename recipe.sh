@@ -16,6 +16,12 @@ REPOSITORY="https://raw.githubusercontent.com/frqtech/idp-ubnt-2204/main"
 SRCDIR="/root/shibboleth-identity-provider-4.3.0"
 SHIBDIR="/opt/shibboleth-idp"
 
+function setProperty {
+	#Based on: https://gist.github.com/kongchen/6748525
+	awk -v pat="^$1 ?=" -v value="$1 = $2" '{ if ($0 ~ pat) print value; else print $0; }' $3 > $3.tmp
+	mv $3.tmp $3
+}
+
 #
 # DEBUG
 #
@@ -100,7 +106,7 @@ nodelaycompress
 include /etc/logrotate.d
 
 # system-specific logs may be also be configured here.
-EOF && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
+EOF
 
 #
 # Configuracao do firewall
@@ -130,7 +136,7 @@ echo "Configurando NTP" | tee -a ${F_LOG}
 timedatectl set-ntp no && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
 apt install -y ntp && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
 
-wget ${REPOSITORY}/main/ntp/ntp.conf -O /etc/ntp.conf && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
+wget ${REPOSITORY}/ntp/ntp.conf -O /etc/ntp.conf && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
 
 #
 # Instalacao do Java/Jetty
@@ -198,7 +204,7 @@ localityName_default = ${CITY}
 stateOrProvinceName_default = ${STATE}
 countryName_default = BR
 commonName_default = ${HN}.${HN_DOMAIN}
-EOF && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
+EOF
 
 #
 # SHIB - Instalação
@@ -329,7 +335,7 @@ idp.attribute.resolver.LDAP.searchFilter        = (${LDAPATTR}=\$resolutionConte
 #idp.pool.LDAP.prunePeriod                      = PT5M
 #idp.pool.LDAP.idleTime                         = PT10M
 #idp.pool.LDAP.blockWaitTime                    = PT3S 
-EOF && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
+EOF
 
 #
 # SHIB - secrets.properties
@@ -351,7 +357,7 @@ idp.attribute.resolver.LDAP.bindDNCredential = %{idp.authn.LDAP.bindDNCredential
 idp.persistentId.salt  = ${PERSISTENTDIDSALT}
 
 idp.cafe.computedIDsalt = ${COMPUTEDIDSALT}
-EOF && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
+EOF
 
 #
 # SHIB - idp-properties
@@ -407,7 +413,7 @@ idp.audit.shortenBindings=true
 #idp.loglevel.opensaml = DEBUG
 #idp.loglevel.props = DEBUG
 #idp.loglevel.httpclient = DEBUG
-EOF && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
+EOF
 
 #
 # SHIB - saml-nameid.properties
@@ -419,7 +425,7 @@ echo "Configurando saml-nameid.properties" | tee -a ${F_LOG}
 cat  > ${SHIBDIR}/conf/saml-nameid.properties <<-EOF
 idp.persistentId.sourceAttribute = ${LDAPATTR}
 idp.persistentId.encoding = BASE32
-EOF && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
+EOF
 
 #
 # SHIB - idp-metadata.xml
@@ -503,7 +509,7 @@ ${CRT}
 
         </AttributeAuthorityDescriptor>
 </EntityDescriptor>
-EOF && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
+EOF
 
 #
 # SHIB - access-control.xml
@@ -537,7 +543,7 @@ cat > /opt/shibboleth-idp/conf/access-control.xml <<-EOF
     </util:map>
 
 </beans>
-EOF && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
+EOF
 
 #
 # SHIB - Personalização layout
@@ -615,7 +621,7 @@ cat > /etc/apache2/sites-available/01-idp.conf <<-EOF
     Redirect permanent "/" "https://${URL}/"
 
 </VirtualHost>
-EOF && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
+EOF
 
 # Chave e Certificado Apache
 openssl genrsa -out /etc/ssl/private/chave-apache.key 2048 && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
@@ -702,12 +708,12 @@ module(load="imklog" permitnonkernelfacility="on")
 # Include all config files in /etc/rsyslog.d/
 #
 \$IncludeConfig /etc/rsyslog.d/*.conf
-EOF && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
+EOF
 
 cat > /etc/rsyslog.d/01-fticks.conf <<-EOF
 :msg, contains, "Shibboleth-FTICKS F-TICKS/CAFE" /var/log/fticks.log
 :msg, contains, "Shibboleth-FTICKS F-TICKS/CAFE" ~
-EOF && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
+EOF
 
 touch /var/log/fticks.log && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
 chmod 0640 /var/log/fticks.log && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
@@ -743,7 +749,7 @@ output.logstash:
 processors:
   - add_host_metadata: ~
   - add_cloud_metadata: ~
-EOF && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
+EOF
 
 systemctl restart filebeat && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
 systemctl enable filebeat && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
@@ -762,7 +768,7 @@ cat > /etc/logrotate.d/fticks <<-EOF
         systemctl restart rsyslog
     endscript
 }
-EOF && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
+EOF
 
 #
 # FAIL2BAN
@@ -783,7 +789,7 @@ before          = common.conf
 [Definition]
 _daemon         = jetty
 failregex       = <HOST>.*Login by.*failed
-EOF && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
+EOF
 
 cat > /etc/fail2ban/jail.local <<-EOF
 [shibboleth-idp]
@@ -794,7 +800,7 @@ banaction = iptables-allports
 logpath = /opt/shibboleth-idp/logs/idp-process.log
 findtime = 300
 maxretry = 5
-EOF && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
+EOF
 
 #
 # KEYSTORE - Popular com certificados
@@ -850,7 +856,7 @@ command[check_idp_jdkversion]=/usr/lib/nagios/plugins/check_idp "https://${HN}.$
 
 include=/etc/nagios/nrpe_local.cfg
 include_dir=/etc/nagios/nrpe.d/
-EOF && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
+EOF
 
 # Download de checks
 wget ${REPOSITORY}/nagios/check_idp -O /usr/lib/nagios/plugins/check_idp && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
@@ -889,7 +895,7 @@ cat > /var/lib/jetty9/webapps/idp.xml <<-EOF
   <Set name="copyWebInf">true</Set>
   <Set name="persistTempDirectory">false</Set>
 </Configure>
-EOF && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
+EOF
 
 #
 # Reinicialização
@@ -897,5 +903,6 @@ EOF && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
 
 echo "" | tee -a ${F_LOG} 
 echo "Reinicializando sistema" | tee -a ${F_LOG}
+echo "`date`" | tee -a ${F_LOG}
 
 reboot
