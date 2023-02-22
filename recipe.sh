@@ -145,8 +145,9 @@ wget ${REPOSITORY}/ntp/ntp.conf -O /etc/ntp.conf && echo "OK" | tee -a ${F_LOG} 
 echo "" | tee -a ${F_LOG} 
 echo "Instalando o Java e Jetty" | tee -a ${F_LOG}
 
-wget -O- https://apt.corretto.aws/corretto.key | sudo apt-key add -  && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
-add-apt-repository 'deb https://apt.corretto.aws stable main'  && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
+#wget -O- https://apt.corretto.aws/corretto.key | sudo apt-key add -  && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
+wget -O- https://apt.corretto.aws/corretto.key | tee /etc/apt/trusted.gpg.d/corretto.asc && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
+add-apt-repository 'deb https://apt.corretto.aws stable main' -y && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
 
 echo "JAVA_HOME=\"/usr/lib/jvm/java-11-amazon-corretto\"" >> /etc/environment && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
 source /etc/environment && echo "OK" | tee -a ${F_LOG} || echo "ERRO" | tee -a ${F_LOG}
